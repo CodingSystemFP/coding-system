@@ -185,34 +185,38 @@ export default function InvestigatorHomePage() {
     setShowExpForm(false);
   };
 
-  const handleCreateGroup = async (e) => {
-    e.preventDefault();
-    if (!groupName.trim()) return alert("Please enter a group name");
+ const handleCreateGroup = async (e) => {
+  e.preventDefault();
+  if (!groupName.trim()) return alert("Please enter a group name");
 
-    // Check globally across ALL groups, not just the current experiment's
-    const duplicateGroup = allGroups.find(   
-      (g) => g.name.toLowerCase() === groupName.trim().toLowerCase()
+  const duplicateGroup = allGroups.find(
+    (g) =>
+      g.experimentId === selectedExperiment._id &&
+      g.name.toLowerCase() === groupName.trim().toLowerCase()
+  );
+
+  if (duplicateGroup) {
+    return alert(
+      "Group name already exists in this experiment. Please choose a different name."
     );
+  }
 
-    if (duplicateGroup) {
-      return alert(
-        "Group name already exists. Please choose a different name."
-      );
-    }
+  const newGroup = await addGroup(
+    selectedExperiment._id,
+    groupName,
+    groupDesc
+  );
 
-    const newGroup = await addGroup(
-      selectedExperiment._id,
-      groupName,
-      groupDesc
-    );
-    if (newGroup) {
-      setGroups((prev) => [...prev, newGroup]);
-      setAllGroups((prev) => [...prev, newGroup]); // ✅ Update global groups list
-    }
-    setGroupName("");
-    setGroupDesc("");
-    setShowGroupForm(false);
-  };
+  if (newGroup) {
+    setGroups((prev) => [...prev, newGroup]);
+    setAllGroups((prev) => [...prev, newGroup]);
+  }
+
+  setGroupName("");
+  setGroupDesc("");
+  setShowGroupForm(false);
+};
+
 
   const handleCreateStatement = async (e) => {
     e.preventDefault();
@@ -221,12 +225,14 @@ export default function InvestigatorHomePage() {
 
     // Check globally across ALL statements, not just the current group's
     const duplicateStatement = allStatements.find(
-      (stmt) => stmt.name.toLowerCase() === statementName.trim().toLowerCase()
+
+      (stmt) => stmt.experimentId === selectedExperiment._id &&
+                stmt.name.toLowerCase() === statementName.trim().toLowerCase()
     );
 
     if (duplicateStatement) {
       return alert(
-        "Statement name already exists. Please choose a different name."
+        "Statement name already exists in this experiment. Please choose a different name."
       );
     }
 
@@ -299,7 +305,7 @@ export default function InvestigatorHomePage() {
 
   const handleDeleteExperiment = async (e, experimentId) => {
     e.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this experiment? This will delete all associated groups, declarations, copies, and tasks.")) {
+    if (window.confirm("Are you sure you want to delete this experiment? This will delete all associated groups, statements, copies, and tasks.")) {
       const success = await deleteExperiment(experimentId);
       if (success) {
         setRelevantExperiments((prev) =>
@@ -311,7 +317,7 @@ export default function InvestigatorHomePage() {
 
   const handleDeleteGroup = async (e, groupId) => {
     e.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this group? This will delete all associated declarations, copies, and tasks.")) {
+    if (window.confirm("Are you sure you want to delete this group? This will delete all associated statements, copies, and tasks.")) {
       try {
         await deleteGroup(groupId);
         setGroups((prev) => prev.filter((g) => g._id !== groupId));
@@ -330,7 +336,7 @@ export default function InvestigatorHomePage() {
 
   const handleDeleteStatement = async (e, statementId) => {
     e.stopPropagation();
-    if (window.confirm("Are you sure you want to delete this declaration? This will delete all associated copies and comparisons.")) {
+    if (window.confirm("Are you sure you want to delete this statement? This will delete all associated copies and comparisons.")) {
       await deleteStatement(statementId);
       setStatements((prev) => prev.filter((s) => s._id !== statementId));
     }
@@ -621,7 +627,7 @@ export default function InvestigatorHomePage() {
           <>
             {showStatementForm && (
               <div className="form-card">
-                <h3>Add Declaration to {selectedGroup.name}</h3>
+                <h3>Add Statement to {selectedGroup.name}</h3>
                 <form
                   onSubmit={handleCreateStatement}
                   className="investigator-form"
@@ -630,14 +636,14 @@ export default function InvestigatorHomePage() {
                     value={statementName}
                     onChange={(e) => setStatementName(e.target.value)}
                     className="investigator-form-input"
-                    placeholder="Declaration Name"
+                    placeholder="Statement Name"
                     autoFocus
                   />
                   <textarea
                     value={statementText}
                     onChange={(e) => setStatementText(e.target.value)}
                     className="investigator-form-textarea"
-                    placeholder="Declaration Content"
+                    placeholder="Statement Content"
                   />
                   <div className="form-actions">
                     <button type="submit" className="btn-primary">
@@ -695,7 +701,7 @@ export default function InvestigatorHomePage() {
               ))}
               {statements.length === 0 && !showStatementForm && (
                 <div className="empty-message">
-                  No declarations found. Add one to continue.
+                  No statements found. Add one to continue.
                 </div>
               )}
             </div>
