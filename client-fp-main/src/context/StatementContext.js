@@ -1,0 +1,71 @@
+// StatementContext.js
+
+import React, { createContext, useContext } from "react";
+import { useRefresh } from "./RefreshContext";
+import {
+  createStatementOnServer as createStatementOnServerService,
+  deleteStatementFromServer as deleteStatementFromServerService,
+  fetchStatementsByGroupId as fetchStatementsByGroupIdService,
+  fetchStatementById as fetchStatementByIdService,
+  fetchStatementsFromServer as fetchStatementsFromServerService,
+} from "../api/StatementApi";
+
+const StatementContext = createContext();
+export const useStatement = () => useContext(StatementContext);
+
+export function StatementProvider({ children }) {
+  const {
+    refreshCopies,
+    refreshTasks,
+    refreshCopyMessages,
+    refreshTaskMessages,
+  } = useRefresh();
+
+  const addStatement = async (name, text, groupId, experimentId) => {
+    return await createStatementOnServerService({
+      name,
+      text,
+      groupId,
+      experimentId,
+    });
+  };
+
+  const statementsByGroupId = async (groupId) => {
+    return await fetchStatementsByGroupIdService(groupId);
+  };
+
+  const statementById = async (statementId) => {
+    return await fetchStatementByIdService(statementId);
+  };
+
+  // All statements
+  const fetchAllStatements = async () => {
+    return await fetchStatementsFromServerService();
+  };
+
+  // --- Delete statement ---
+  const deleteStatement = async (id) => {
+    await deleteStatementFromServerService(id);
+    // ✅ Refresh ALL related data after deletion
+    await Promise.all([
+      refreshCopies(),
+      refreshTasks(),
+      refreshCopyMessages(),
+      refreshTaskMessages(),
+    ]);
+  };
+
+  return (
+    <StatementContext.Provider
+      value={{
+        addStatement,
+        statementsByGroupId,
+        statementById,
+        fetchAllStatements,
+        deleteStatement,
+      }}
+    >
+      {children}
+    </StatementContext.Provider>
+  );
+}
