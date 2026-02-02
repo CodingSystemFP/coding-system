@@ -26,7 +26,7 @@ app.use(cookieParser());
 // CORS Configuration - Complete fix!
 const allowedOrigins = [
   "http://localhost:3000",
-  "https://client-fp-production.up.railway.app",
+  "https://coding-system-production.up.railway.app",
 ].filter(Boolean);
 
 console.log("🔧 Allowed CORS origins:", allowedOrigins);
