@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link, useLocation } from "react-router-dom";
+import { useNavigate, Link, useLocation, useSearchParams } from "react-router-dom";
 import { useUsers } from "../../context/UserContext";
 import { useData } from "../../context/DataContext";
 import LoginForm from "../../components/Auth/LoginForm";
@@ -11,9 +11,11 @@ export default function LoginPage() {
 
   const navigate = useNavigate();
   const location = useLocation();
+  const [searchParams] = useSearchParams();
 
   const [message, setMessage] = useState("");
 
+  // 🔹 הצגת הודעה שהועברה בניווט (אם יש)
   useEffect(() => {
     if (location.state?.message) {
       setMessage(location.state.message);
@@ -21,7 +23,31 @@ export default function LoginPage() {
     }
   }, [location]);
 
+  // 🔹 ניקוי סשן אם מגיעים מהקישור במייל
   useEffect(() => {
+    const fromEmail = searchParams.get("fromEmail") === "true";
+
+    if (!fromEmail) return;
+
+    const forceLogout = async () => {
+      try {
+        await fetch(`${process.env.REACT_APP_API_URL}/api/auth/logout`, {
+          method: "POST",
+          credentials: "include",
+        });
+      } catch (e) {
+        console.error("Auto logout failed:", e);
+      }
+    };
+
+    forceLogout();
+  }, [searchParams]);
+
+  // 🔹 ניתוב אוטומטי רק אם זה לא כניסה מהקישור במייל
+  useEffect(() => {
+    const fromEmail = searchParams.get("fromEmail") === "true";
+    if (fromEmail) return; // לא לבצע redirect אוטומטי אם באים מהמייל
+
     if (location.pathname !== "/") return;
 
     if (isAuthChecked && currentUser) {
@@ -39,7 +65,7 @@ export default function LoginPage() {
           break;
       }
     }
-  }, [currentUser, isAuthChecked, navigate, location.pathname]);
+  }, [currentUser, isAuthChecked, navigate, location.pathname, searchParams]);
 
   const handleLogin = async (username, password) => {
     const result = await login(username, password);
