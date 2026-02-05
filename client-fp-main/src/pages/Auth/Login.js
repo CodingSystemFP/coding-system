@@ -22,6 +22,8 @@ export default function LoginPage() {
   }, [location]);
 
   useEffect(() => {
+    if (location.pathname !== "/") return;
+
     if (isAuthChecked && currentUser) {
       switch (currentUser.role) {
         case "coder":
@@ -37,7 +39,7 @@ export default function LoginPage() {
           break;
       }
     }
-  }, [currentUser, isAuthChecked, navigate]);
+  }, [currentUser, isAuthChecked, navigate, location.pathname]);
 
   const handleLogin = async (username, password) => {
     const result = await login(username, password);
